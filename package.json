@@ -1,0 +1,14 @@
+{
+  "name": "peripage-editor",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Web Bluetooth editor for PeriPage thermal printers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "start": "python3 -m http.server 8765 --bind 127.0.0.1 --directory public",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.129.0"
+  }
+}

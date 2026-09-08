@@ -1,0 +1,1637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PeriPage A6 Web Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Bungee&family=Bungee+Shade&family=Monoton&family=Righteous&family=Rubik+Mono+One&family=Archivo+Black&family=Titan+One&family=Alfa+Slab+One&family=Press+Start+2P&family=Silkscreen&family=VT323&family=Permanent+Marker&family=Caveat:wght@400;700&family=Rock+Salt&family=Gloria+Hallelujah&family=Shadows+Into+Light&family=Lobster&family=Pacifico&family=Special+Elite&family=Courier+Prime:wght@400;700&family=UnifrakturMaguntia&family=Creepster&family=Nosifer&family=Playfair+Display:wght@400;700&family=Cinzel:wght@400;700&family=Orbitron:wght@400;700&family=Major+Mono+Display&family=Noto+Emoji&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+  --tx:#e6e9ef; --tx2:#9aa3b2; --acc:#5b9cff; --acc2:#7c5cff;
+  --ok:#3ecf8e; --warn:#ffb020; --err:#ff5d5d; --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--tx);
+  font:13px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{
+  background:var(--panel2); border:1px solid var(--line); color:var(--tx);
+  padding:6px 10px; border-radius:8px; cursor:pointer;
+}
+button:hover{border-color:#3c4453; background:#252a35}
+button:disabled{opacity:.45; cursor:not-allowed}
+button.primary{background:linear-gradient(180deg,var(--acc),#3f7ce0); border-color:#3f7ce0; color:#fff; font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+button.ghost{background:transparent}
+button.danger:hover{border-color:var(--err); color:var(--err)}
+button.mini{padding:2px 7px; font-size:12px; border-radius:6px}
+input[type=text],input[type=number],select,textarea{
+  background:#0d1016; border:1px solid var(--line); border-radius:7px; padding:5px 7px; width:100%;
+}
+input:focus,select:focus,textarea:focus{outline:none; border-color:var(--acc)}
+textarea{resize:vertical; min-height:64px; font-family:ui-monospace,Menlo,Consolas,monospace}
+input[type=range]{width:100%; accent-color:var(--acc)}
+input[type=checkbox]{accent-color:var(--acc); width:14px; height:14px}
+label{color:var(--tx2); font-size:11.5px; display:block; margin-bottom:3px; letter-spacing:.02em}
+
+#app{display:grid; grid-template-columns:300px 1fr 296px; height:100vh}
+.col{height:100vh; overflow:auto; background:var(--panel); display:flex; flex-direction:column}
+.col.left{border-right:1px solid var(--line)}
+.col.right{border-left:1px solid var(--line)}
+.center{display:flex; flex-direction:column; background:var(--bg); overflow:hidden}
+
+.hdr{padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px; flex:0 0 auto}
+.hdr h1{font-size:14px; margin:0; letter-spacing:.01em}
+.hdr .dot{width:8px;height:8px;border-radius:50%;background:var(--err);box-shadow:0 0 0 3px rgba(255,93,93,.15)}
+.hdr .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(62,207,142,.15)}
+.sec{padding:12px 14px; border-bottom:1px solid var(--line)}
+.sec h2{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--tx2); margin:0 0 9px}
+.row{display:flex; gap:7px; align-items:center}
+.row>*{min-width:0}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+.f{margin-bottom:9px}
+.f:last-child{margin-bottom:0}
+.hint{color:var(--tx2); font-size:11px; line-height:1.4}
+.spacer{flex:1}
+
+.addbar{display:grid; grid-template-columns:1fr 1fr; gap:7px}
+.addbar button{display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 6px}
+
+#list{padding:10px 12px; display:flex; flex-direction:column; gap:8px}
+.item{background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.item.sel{border-color:var(--acc); box-shadow:0 0 0 1px rgba(91,156,255,.25)}
+.item .top{display:flex; align-items:center; gap:6px; padding:8px 8px; cursor:pointer;
+  user-select:none; -webkit-user-select:none}
+.handle{cursor:grab; color:#5f6b7f; font-size:13px; line-height:1; letter-spacing:-1px;
+  padding:2px 1px; touch-action:none; flex:0 0 auto}
+.handle:hover{color:var(--acc)}
+.handle:active{cursor:grabbing}
+.chev{color:var(--tx2); font-size:9px; width:9px; flex:0 0 auto}
+.item.dragging{opacity:.55; border-color:var(--acc); box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#list.dragging-active .item:not(.dragging){transition:transform .12s}
+.item .kind{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:#0f1115;
+  background:var(--tx2); border-radius:4px; padding:1px 5px; font-weight:700}
+.item.t-text .kind{background:#6ea8ff}
+.item.t-image .kind{background:#7c5cff; color:#fff}
+.item.t-qr .kind{background:#3ecf8e}
+.item.t-barcode .kind{background:#ffb020}
+.item.t-rule .kind,.item.t-space .kind{background:#7a8496; color:#fff}
+.item.t-card .kind{background:#ff7ac6; color:#241019}
+.item .ttl{flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--tx2); font-size:12px}
+.item .body{padding:0 9px 10px; border-top:1px solid var(--line); padding-top:9px}
+.item.collapsed .body{display:none}
+
+#stage{flex:1; overflow:auto; display:flex; justify-content:center; padding:26px 20px 60px}
+#paper{
+  background:#fff; box-shadow:0 10px 40px rgba(0,0,0,.55); border-radius:3px;
+  align-self:flex-start; position:relative; image-rendering:pixelated;
+}
+#paper canvas{display:block; image-rendering:pixelated}
+.tearline{height:14px; background:repeating-linear-gradient(90deg,#fff 0 6px,transparent 6px 12px)}
+#stagebar{
+  flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:9px 14px;
+  border-bottom:1px solid var(--line); background:var(--panel);
+}
+.pill{background:var(--panel2); border:1px solid var(--line); border-radius:20px; padding:3px 10px; font-size:11.5px; color:var(--tx2)}
+
+#log{
+  font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; line-height:1.5;
+  background:#0b0d12; border:1px solid var(--line); border-radius:8px; padding:8px;
+  height:150px; overflow:auto; white-space:pre-wrap; word-break:break-all; color:#9fb0c9;
+}
+#log .e{color:var(--err)} #log .o{color:var(--ok)} #log .w{color:var(--warn)} #log .d{color:#5f6b7f}
+#prog{height:5px; background:var(--panel2); border-radius:3px; overflow:hidden; margin-top:8px}
+#progbar{height:100%; width:0; background:linear-gradient(90deg,var(--acc),var(--acc2)); transition:width .12s}
+.empty{color:var(--tx2); text-align:center; padding:26px 12px; font-size:12px}
+.warnbox{background:rgba(255,176,32,.09); border:1px solid rgba(255,176,32,.35); color:#ffd98a;
+  border-radius:8px; padding:8px 10px; font-size:11.5px; line-height:1.45}
+.swatch{display:flex; gap:5px}
+.swatch button{flex:1; padding:5px 0; font-size:11.5px}
+.swatch button.on{background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600}
+#emojiModal{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50;
+  display:flex; align-items:center; justify-content:center; backdrop-filter:blur(2px)}
+#emojiModal[hidden]{display:none}
+.epanel{width:430px; max-width:92vw; max-height:74vh; background:var(--panel);
+  border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column;
+  box-shadow:0 24px 70px rgba(0,0,0,.6); overflow:hidden}
+.epanel .ehead{padding:11px 13px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center}
+.ecats{display:flex; gap:4px; padding:8px 11px 0; flex-wrap:wrap}
+.ecats button{padding:3px 9px; font-size:11.5px; border-radius:14px}
+.ecats button.on{background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600}
+.egrid{padding:10px 11px 14px; overflow:auto; display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(40px,1fr)); gap:3px}
+.egrid button{font-family:'Noto Emoji','Noto Color Emoji',sans-serif; font-size:21px; line-height:1;
+  padding:7px 0; background:transparent; border:1px solid transparent; border-radius:8px}
+.egrid button:hover{background:var(--panel2); border-color:var(--acc)}
+.enone{grid-column:1/-1; color:var(--tx2); text-align:center; padding:20px; font-size:12px}
+.tbar{display:flex; gap:6px; margin-bottom:4px}
+.tbar button{padding:3px 8px; font-size:11.5px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2c323d; border-radius:6px; border:2px solid var(--panel)}
+::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= LEFT : content ================= -->
+  <div class="col left">
+    <div class="hdr"><h1>Content</h1><span class="spacer"></span>
+      <button class="mini ghost" id="btnCollapse" title="Collapse all">⇕</button>
+      <button class="mini ghost danger" id="btnClear" title="Remove everything">Clear</button>
+    </div>
+    <div class="sec">
+      <div class="addbar">
+        <button data-add="text">＋ Text</button>
+        <button data-add="image">＋ Image</button>
+        <button data-add="qr">＋ QR code</button>
+        <button data-add="barcode">＋ Barcode</button>
+        <button data-add="rule">＋ Divider</button>
+        <button data-add="space">＋ Spacer</button>
+        <button data-add="card" style="grid-column:1/-1">🎁 ＋ Gift tag</button>
+      </div>
+    </div>
+    <div id="list"></div>
+    <div class="spacer"></div>
+    <div class="sec">
+      <div class="grid3">
+        <button class="mini" id="btnSave">Save</button>
+        <button class="mini" id="btnLoad">Load</button>
+        <button class="mini" id="btnPng">PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CENTER : preview ================= -->
+  <div class="col center">
+    <div id="stagebar">
+      <strong style="font-size:13px">Preview</strong>
+      <span class="pill" id="pillDims">–</span>
+      <span class="pill" id="pillBytes">–</span>
+      <span class="spacer"></span>
+      <label style="margin:0">Zoom</label>
+      <select id="zoom" style="width:78px">
+        <option value="1">1×</option>
+        <option value="1.5">1.5×</option>
+        <option value="2" selected>2×</option>
+        <option value="3">3×</option>
+      </select>
+      <button class="mini" id="btnGrid" title="Toggle 1:1 dot grid">Dots</button>
+    </div>
+    <div id="stage">
+      <div id="paper"><canvas id="cv" width="384" height="10"></canvas><div class="tearline"></div></div>
+    </div>
+  </div>
+
+  <!-- ================= RIGHT : printer ================= -->
+  <div class="col right">
+    <div class="hdr"><span class="dot" id="dot"></span><h1 id="devName">Not connected</h1></div>
+
+    <div class="sec">
+      <h2>Connection</h2>
+      <div class="f grid2">
+        <button class="primary" id="btnConnect">Connect</button>
+        <button id="btnDisconnect" disabled>Disconnect</button>
+      </div>
+      <div class="f">
+        <label>Device filter</label>
+        <select id="filterMode">
+          <option value="name">PeriPage / PPG name prefix</option>
+          <option value="all">All Bluetooth devices</option>
+        </select>
+      </div>
+      <div class="f">
+        <label>Write characteristic</label>
+        <select id="charSel"><option value="">— connect to discover —</option></select>
+        <div class="hint" style="margin-top:4px">Auto-picked. Change it if printing does nothing.</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Printer</h2>
+      <div class="f">
+        <label>Paper width</label>
+        <select id="paperW">
+          <option value="384" selected>A6 · 58 mm · 384 dots</option>
+          <option value="576">A6+ / A40 · 576 dots</option>
+          <option value="832">80 mm · 832 dots</option>
+        </select>
+      </div>
+      <div class="f">
+        <label>Darkness</label>
+        <div class="swatch" id="density">
+          <button data-d="0">Light</button><button data-d="1" class="on">Normal</button><button data-d="2">Dark</button>
+        </div>
+      </div>
+      <div class="f grid2">
+        <div><label>Feed after (px)</label><input type="number" id="feed" value="80" min="0" max="255"></div>
+        <div><label>Rows / packet</label><input type="number" id="chunkRows" value="48" min="8" max="255"></div>
+      </div>
+      <div class="f">
+        <label>Transfer mode</label>
+        <select id="txMode">
+          <option value="rows" selected>Row by row (matches reference)</option>
+          <option value="bulk">Bulk packets (faster)</option>
+        </select>
+      </div>
+      <div class="f grid2">
+        <div><label>BLE packet (bytes)</label>
+          <select id="mtu">
+            <option value="20">20 (safest)</option>
+            <option value="100">100</option>
+            <option value="180" selected>180</option>
+            <option value="244">244</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+        <div><label>Delay (ms)</label><input type="number" id="delay" value="18" min="0" max="500"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Print</h2>
+      <div class="f grid2">
+        <button class="primary" id="btnPrint" disabled>Print</button>
+        <button id="btnTest" disabled>Test strip</button>
+      </div>
+      <div class="grid2">
+        <button class="mini" id="btnFeed" disabled>Feed paper</button>
+        <button class="mini" id="btnReset" disabled>Reset printer</button>
+      </div>
+      <button class="mini" id="btnProbe" disabled style="width:100%;margin-top:7px">Probe every characteristic</button>
+      <div id="prog"><div id="progbar"></div></div>
+    </div>
+
+    <div class="sec">
+      <h2>Log</h2>
+      <div id="log"></div>
+    </div>
+
+    <div class="sec" id="secWarn"></div>
+  </div>
+</div>
+<div id="emojiModal" hidden>
+  <div class="epanel">
+    <div class="ehead">
+      <input type="text" id="emojiSearch" placeholder="Search emoji…" autocomplete="off">
+      <button class="mini" id="emojiClose">Close</button>
+    </div>
+    <div class="ecats" id="emojiCats"></div>
+    <div class="egrid" id="emojiGrid"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   PeriPage A6 web editor  —  composition + 1-bit rasteriser
+   ========================================================================== */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let uid = 1;
+
+const S = {
+  els: [],
+  width: 384,
+  density: 1,
+  zoom: 2,
+  grid: false,
+  sel: null,
+};
+
+/* ------------------------------------------------------------ font catalogue */
+// Values carry no generic fallback; fontStack() appends the emoji face and a
+// fallback in the right order, so emoji always resolve to the monochrome family.
+const FONTS = [
+  ['Basic', [
+    ['sans-serif','System sans'], ['serif','System serif'], ['ui-monospace, monospace','System mono'],
+  ]],
+  ['Heavy display', [
+    ["'Anton'",'Anton'], ["'Archivo Black'",'Archivo Black'], ["'Alfa Slab One'",'Alfa Slab One'],
+    ["'Titan One'",'Titan One'], ["'Rubik Mono One'",'Rubik Mono One'], ["'Bebas Neue'",'Bebas Neue'],
+  ]],
+  ['Funky', [
+    ["'Bungee'",'Bungee'], ["'Bungee Shade'",'Bungee Shade'], ["'Monoton'",'Monoton'],
+    ["'Righteous'",'Righteous'], ["'Creepster'",'Creepster'], ["'Nosifer'",'Nosifer'],
+  ]],
+  ['Pixel & retro', [
+    ["'Press Start 2P'",'Press Start 2P'], ["'Silkscreen'",'Silkscreen'], ["'VT323'",'VT323'],
+    ["'Major Mono Display'",'Major Mono'], ["'Orbitron'",'Orbitron'],
+  ]],
+  ['Handwriting', [
+    ["'Permanent Marker'",'Permanent Marker'], ["'Caveat'",'Caveat'], ["'Rock Salt'",'Rock Salt'],
+    ["'Gloria Hallelujah'",'Gloria Hallelujah'], ["'Shadows Into Light'",'Shadows Into Light'],
+  ]],
+  ['Script', [ ["'Lobster'",'Lobster'], ["'Pacifico'",'Pacifico'] ]],
+  ['Typewriter', [ ["'Special Elite'",'Special Elite'], ["'Courier Prime'",'Courier Prime'] ]],
+  ['Elegant', [
+    ["'Playfair Display'",'Playfair Display'], ["'Cinzel'",'Cinzel'],
+    ["'UnifrakturMaguntia'",'Blackletter'],
+  ]],
+];
+const EMOJI_FACE = "'Noto Emoji'";
+const fontStack = fam => `${fam}, ${EMOJI_FACE}, sans-serif`;
+
+// A webfont that has not downloaded yet silently renders as a fallback, which would
+// bake the wrong glyphs into the raster. Load faces first, then repaint.
+async function ensureFonts(){
+  if (!document.fonts) return;
+  const fams = new Set([EMOJI_FACE]);
+  S.els.forEach(e => { if ((e.type === 'text' || e.type === 'card') && e.family) fams.add(e.family); });
+  await Promise.all([...fams].flatMap(f =>
+    ['400','700'].map(w => document.fonts.load(`${w} 32px ${f}`).catch(() => {}))));
+}
+let fontRepaint = null;
+function repaintWhenFontsReady(){
+  clearTimeout(fontRepaint);
+  fontRepaint = setTimeout(() => ensureFonts().then(paint), 60);
+}
+
+/* ---------------------------------------------------------------- defaults */
+function makeEl(type){
+  const base = { id: uid++, type, collapsed:true, before:0, after:6 };
+  switch(type){
+    case 'text':    return {...base, text:'Hello from PeriPage', family:'sans-serif',
+                            size:26, bold:false, italic:false, align:'left',
+                            lineHeight:1.25, tracking:0, invert:false, after:8};
+    case 'image':   return {...base, src:null, name:'', scale:100, align:'center',
+                            dither:'floyd', threshold:128, brightness:0, contrast:0,
+                            invert:false, _img:null};
+    case 'qr':      return {...base, value:'https://example.com', size:200,
+                            align:'center', ecc:'M'};
+    case 'barcode': return {...base, value:'1234567890', format:'CODE128',
+                            height:70, align:'center', showValue:true};
+    case 'rule':    return {...base, style:'solid', thickness:3, inset:0, after:8, before:4};
+    case 'space':   return {...base, height:24, after:0};
+    case 'card':    return {...base, to:'Priya', from:'Balan', message:'Happy Diwali',
+                            ornament:'✦', family:"'Playfair Display'", size:34,
+                            border:'deco', weight:3, padding:16, inset:6,
+                            labels:true, divider:true, before:6, after:10};
+  }
+}
+
+/* ------------------------------------------------------------ image helpers */
+// luminance buffer -> 1-bit, 1 = black dot
+function toMono(lum, w, h, mode, thr){
+  const out = new Uint8Array(w*h);
+  if (mode === 'threshold' || mode === 'none'){
+    for (let i=0;i<w*h;i++) out[i] = lum[i] < thr ? 1 : 0;
+    return out;
+  }
+  if (mode === 'bayer'){
+    const M = [[0,32,8,40,2,34,10,42],[48,16,56,24,50,18,58,26],
+               [12,44,4,36,14,46,6,38],[60,28,52,20,62,30,54,22],
+               [3,35,11,43,1,33,9,41],[51,19,59,27,49,17,57,25],
+               [15,47,7,39,13,45,5,37],[63,31,55,23,61,29,53,21]];
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++){
+      const t = (M[y&7][x&7]+0.5) * (255/64);
+      out[y*w+x] = lum[y*w+x] < t ? 1 : 0;
+    }
+    return out;
+  }
+  // error diffusion
+  const buf = Float32Array.from(lum);
+  const push = (x,y,e) => { if (x>=0 && x<w && y<h) buf[y*w+x] += e; };
+  const atk = mode === 'atkinson';
+  for (let y=0;y<h;y++){
+    for (let x=0;x<w;x++){
+      const i = y*w+x, old = buf[i], nv = old < 128 ? 0 : 255;
+      out[i] = nv ? 0 : 1;
+      const err = old - nv;
+      if (atk){
+        const e = err/8;
+        push(x+1,y,e); push(x+2,y,e);
+        push(x-1,y+1,e); push(x,y+1,e); push(x+1,y+1,e);
+        push(x,y+2,e);
+      } else {                                   // Floyd–Steinberg
+        push(x+1,y,   err*7/16);
+        push(x-1,y+1, err*3/16);
+        push(x,  y+1, err*5/16);
+        push(x+1,y+1, err*1/16);
+      }
+    }
+  }
+  return out;
+}
+
+// canvas -> luminance with brightness / contrast / invert applied
+function lumFrom(ctx, w, h, {brightness=0, contrast=0, invert=false} = {}){
+  const d = ctx.getImageData(0,0,w,h).data;
+  const lum = new Float32Array(w*h);
+  const c = clamp(contrast,-100,100);
+  const k = (259*(c+255)) / (255*(259-c));       // standard contrast factor
+  for (let i=0, p=0; i<lum.length; i++, p+=4){
+    const a = d[p+3]/255;
+    let v = 0.299*d[p] + 0.587*d[p+1] + 0.114*d[p+2];
+    v = v*a + 255*(1-a);                          // composite onto white paper
+    v = k*(v-128) + 128 + brightness;
+    if (invert) v = 255 - v;
+    lum[i] = clamp(v, 0, 255);
+  }
+  return lum;
+}
+
+function blankCtx(w,h){
+  const c = document.createElement('canvas');
+  c.width = w; c.height = Math.max(1, h);
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height);
+  return x;
+}
+const alignX = (align, boxW, W) =>
+  align === 'center' ? Math.round((W-boxW)/2) : align === 'right' ? W-boxW : 0;
+
+/* ------------------------------------------------------------ text wrapping */
+function wrap(ctx, text, maxW){
+  const lines = [];
+  for (const para of String(text).split('\n')){
+    if (para === ''){ lines.push(''); continue; }
+    let line = '';
+    for (const word of para.split(/(\s+)/)){
+      const test = line + word;
+      if (ctx.measureText(test).width > maxW && line.trim() !== ''){
+        lines.push(line.replace(/\s+$/,''));
+        line = word.replace(/^\s+/,'');
+      } else line = test;
+      while (ctx.measureText(line).width > maxW && line.length > 1){
+        let i = line.length;
+        while (i > 1 && ctx.measureText(line.slice(0,i)).width > maxW) i--;
+        lines.push(line.slice(0,i));
+        line = line.slice(i);
+      }
+    }
+    lines.push(line.replace(/\s+$/,''));
+  }
+  return lines;
+}
+
+/* bounding box of non-white content, used to snap QR codes to whole dots */
+function darkBBox(ctx, w, h, thr){
+  thr = thr || 160;
+  const d = ctx.getImageData(0,0,w,h).data;
+  let x0=w, y0=h, x1=-1, y1=-1;
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){
+    const p = (y*w+x)*4, a = d[p+3]/255;
+    const v = (0.299*d[p] + 0.587*d[p+1] + 0.114*d[p+2])*a + 255*(1-a);
+    if (v < thr){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  }
+  return x1 < 0 ? null : { x:x0, y:y0, w:x1-x0+1, h:y1-y0+1 };
+}
+
+/* --------------------------------------------------- per-element rasterising */
+// returns { mono:Uint8Array(W*h), h }
+function renderEl(el, W){
+  const pad = el.before|0, padAfter = el.after|0;
+  const wrapPad = (mono, h) => {
+    const H = pad + h + padAfter;
+    const out = new Uint8Array(W*H);
+    out.set(mono, pad*W);
+    return { mono: out, h: H };
+  };
+
+  if (el.type === 'space') return { mono:new Uint8Array(W*Math.max(1,el.height|0)), h:Math.max(1,el.height|0) };
+
+  if (el.type === 'rule'){
+    const t = clamp(el.thickness|0, 1, 40), inset = clamp(el.inset|0, 0, W/2-4);
+    const m = new Uint8Array(W*t);
+    for (let y=0;y<t;y++) for (let x=inset;x<W-inset;x++){
+      if (el.style === 'dashed' && (x>>3) % 2) continue;
+      if (el.style === 'dotted' && (x & 1)) continue;
+      m[y*W+x] = 1;
+    }
+    return wrapPad(m, t);
+  }
+
+  if (el.type === 'text'){
+    const probe = blankCtx(W, 10);
+    const font = `${el.italic?'italic ':''}${el.bold?'700 ':'400 '}${Math.max(6,el.size|0)}px ${fontStack(el.family)}`;
+    probe.font = font;
+    probe.letterSpacing = (el.tracking|0) + 'px';
+    const lh = Math.round(Math.max(6,el.size|0) * clamp(el.lineHeight,0.8,3));
+    const lines = wrap(probe, el.text, W - 4);
+    const h = Math.max(lh, lines.length * lh);
+    const ctx = blankCtx(W, h);
+    ctx.font = font;
+    ctx.letterSpacing = (el.tracking|0) + 'px';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000';
+    if (el.invert){ ctx.fillRect(0,0,W,h); ctx.fillStyle = '#fff'; }
+    lines.forEach((ln,i) => {
+      const w = ctx.measureText(ln).width;
+      const x = el.align === 'center' ? (W-w)/2 : el.align === 'right' ? W-w-2 : 2;
+      ctx.fillText(ln, x, i*lh + lh/2);
+    });
+    return wrapPad(toMono(lumFrom(ctx,W,h), W, h, 'threshold', 160), h);
+  }
+
+  if (el.type === 'image'){
+    if (!el._img || !el._img.width) return { mono:new Uint8Array(W*2), h:2 };
+    const iw = Math.max(1, Math.round(W * clamp(el.scale,5,100)/100));
+    const ih = Math.max(1, Math.round(el._img.height * (iw/el._img.width)));
+    const ctx = blankCtx(W, ih);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(el._img, alignX(el.align, iw, W), 0, iw, ih);
+    const lum = lumFrom(ctx, W, ih, {brightness:el.brightness, contrast:el.contrast, invert:el.invert});
+    return wrapPad(toMono(lum, W, ih, el.dither, el.threshold), ih);
+  }
+
+  if (el.type === 'qr'){
+    const target = clamp(el.size|0, 32, W);
+    const tmp = document.createElement('canvas');
+    try {
+      new QRious({ element:tmp, value:String(el.value||' '), size:600, level:el.ecc,
+                   background:'#fff', foreground:'#000', padding:0 });
+    } catch(e){ return { mono:new Uint8Array(W*2), h:2 }; }
+    const tc = tmp.getContext('2d', {willReadFrequently:true});
+    const bb = darkBBox(tc, tmp.width, tmp.height);
+    if (bb){
+      const d = tc.getImageData(bb.x, bb.y, bb.w, bb.h).data;
+      const dark = (x,y) => {
+        const p = ((y|0)*bb.w + (x|0))*4;
+        return (0.299*d[p] + 0.587*d[p+1] + 0.114*d[p+2]) < 128;
+      };
+      let run = 0;                                   // finder top edge is exactly 7 modules
+      while (run < bb.w && dark(run, 0)) run++;
+      const ms = run/7;
+      const n  = ms > 0 ? Math.round(bb.w/ms) : 0;
+      if (n >= 21 && n <= 177 && n <= W){
+        let k = Math.max(1, Math.round(target/n));
+        while (n*k > W && k > 1) k--;
+        const side = n*k;
+        const m  = new Uint8Array(W*side);
+        const ox = clamp(alignX(el.align, side, W), 0, Math.max(0, W-side));
+        for (let j=0;j<n;j++){
+          for (let i=0;i<n;i++){
+            if (!dark((i+0.5)*bb.w/n, (j+0.5)*bb.h/n)) continue;
+            for (let dy=0; dy<k; dy++){
+              const row = (j*k+dy)*W + ox + i*k;
+              for (let dx=0; dx<k; dx++) m[row+dx] = 1;
+            }
+          }
+        }
+        return wrapPad(m, side);
+      }
+    }
+    const size = target;                             // fallback: plain nearest-neighbour scale
+    const ctx = blankCtx(W, size);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tmp, alignX(el.align, size, W), 0, size, size);
+    return wrapPad(toMono(lumFrom(ctx,W,size), W, size, 'threshold', 128), size);
+  }
+
+  if (el.type === 'card'){
+    const { canvas:ctx, h } = renderCard(el, W);
+    return wrapPad(toMono(lumFrom(ctx, W, h), W, h, 'threshold', 150), h);
+  }
+
+  if (el.type === 'barcode'){
+    const tmp = document.createElement('canvas');
+    let ok = true;
+    try {
+      JsBarcode(tmp, String(el.value||''), {
+        format: el.format, height: clamp(el.height|0,20,300), width:2,
+        displayValue: !!el.showValue, fontSize:18, margin:6, textMargin:2,
+        background:'#ffffff', lineColor:'#000000'
+      });
+    } catch(e){ ok = false; }
+    if (!ok || !tmp.width){
+      const ctx = blankCtx(W, 26);
+      ctx.fillStyle='#000'; ctx.font='16px sans-serif'; ctx.textBaseline='middle';
+      ctx.fillText('! invalid barcode value', 2, 13);
+      return wrapPad(toMono(lumFrom(ctx,W,26), W, 26, 'threshold', 160), 26);
+    }
+    const bw = Math.min(W, tmp.width);
+    const bh = Math.round(tmp.height * (bw/tmp.width));
+    const ctx = blankCtx(W, bh);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tmp, alignX(el.align, bw, W), 0, bw, bh);
+    return wrapPad(toMono(lumFrom(ctx,W,bh), W, bh, 'threshold', 150), bh);
+  }
+  return { mono:new Uint8Array(W), h:1 };
+}
+
+/* ==========================================================================
+   Gift tag — a framed card. Borders are painted as geometry on the dot grid,
+   so they stay crisp at 203 dpi instead of relying on font glyphs.
+   ========================================================================== */
+const frameRect = (c,x,y,w,h,t) => {
+  c.fillRect(x, y, w, t); c.fillRect(x, y+h-t, w, t);
+  c.fillRect(x, y, t, h); c.fillRect(x+w-t, y, t, h);
+};
+const dashFrame = (c,x,y,w,h,t,dash,gap) => {
+  for (let i=0;i<w;i+=dash+gap){ const l=Math.min(dash,w-i);
+    c.fillRect(x+i,y,l,t); c.fillRect(x+i,y+h-t,l,t); }
+  for (let i=0;i<h;i+=dash+gap){ const l=Math.min(dash,h-i);
+    c.fillRect(x,y+i,t,l); c.fillRect(x+w-t,y+i,t,l); }
+};
+function starAt(c,cx,cy,r){
+  c.beginPath();
+  for (let i=0;i<8;i++){
+    const a = -Math.PI/2 + i*Math.PI/4, rr = i%2 ? r*0.38 : r;
+    const px = cx + Math.cos(a)*rr, py = cy + Math.sin(a)*rr;
+    i ? c.lineTo(px,py) : c.moveTo(px,py);
+  }
+  c.closePath(); c.fill();
+}
+
+const BORDERS = {
+  none:      { group:'None',   label:'No border', zone:() => 0, draw(){} },
+  single:    { group:'Classy', label:'Single rule',
+               zone:t => t, draw(c,W,H,t,i){ frameRect(c,i,i,W-2*i,H-2*i,t); } },
+  double:    { group:'Classy', label:'Double rule',
+               zone:t => t*3,
+               draw(c,W,H,t,i){ frameRect(c,i,i,W-2*i,H-2*i,t);
+                 frameRect(c,i+t*2,i+t*2,W-2*i-t*4,H-2*i-t*4,t); } },
+  thickthin: { group:'Classy', label:'Thick + thin',
+               zone:t => t*4,
+               draw(c,W,H,t,i){ const th=Math.max(1,Math.round(t*0.5));
+                 frameRect(c,i,i,W-2*i,H-2*i,t*2);
+                 frameRect(c,i+t*3,i+t*3,W-2*i-t*6,H-2*i-t*6,th); } },
+  dotted:    { group:'Classy', label:'Dotted',
+               zone:t => t, draw(c,W,H,t,i){ dashFrame(c,i,i,W-2*i,H-2*i,t,t,t*2); } },
+  deco:      { group:'Classy', label:'Deco corners',
+               zone:t => t*4,
+               draw(c,W,H,t,i){
+                 const w=W-2*i, h=H-2*i, L=Math.round(Math.min(w,h)*0.22), th=Math.max(1,Math.round(t*0.5));
+                 [[i,i,1,1],[i+w,i,-1,1],[i,i+h,1,-1],[i+w,i+h,-1,-1]].forEach(([x,y,sx,sy])=>{
+                   c.fillRect(sx>0?x:x-L, sy>0?y:y-t, L, t);
+                   c.fillRect(sx>0?x:x-t, sy>0?y:y-L, t, L);
+                   const o=t*3;
+                   c.fillRect(sx>0?x+o:x-L*0.7-o, sy>0?y+o:y-o-th, L*0.7, th);
+                   c.fillRect(sx>0?x+o:x-o-th, sy>0?y+o:y-L*0.7-o, th, L*0.7);
+                 });
+                 [[i+w/2, i+t/2],[i+w/2, i+h-t/2]].forEach(([x,y]) => starAt(c,x,y,t*2.2));
+               } },
+  dashed:    { group:'Funky',  label:'Dashed',
+               zone:t => t, draw(c,W,H,t,i){ dashFrame(c,i,i,W-2*i,H-2*i,t,t*3,t*2); } },
+  ticket:    { group:'Funky',  label:'Ticket stub',
+               zone:t => t,
+               draw(c,W,H,t,i){
+                 dashFrame(c,i,i,W-2*i,H-2*i,t,t*3,t*2);
+                 const r=Math.max(6,t*3);            // white notches punched into the sides
+                 c.save(); c.fillStyle='#fff';
+                 c.beginPath(); c.arc(i, H/2, r, 0, Math.PI*2); c.fill();
+                 c.beginPath(); c.arc(W-i, H/2, r, 0, Math.PI*2); c.fill();
+                 c.restore();
+               } },
+  scallop:   { group:'Funky',  label:'Scallops',
+               zone:t => t*3,
+               draw(c,W,H,t,i){
+                 const r=t*3, w=W-2*i, h=H-2*i;
+                 c.save(); c.strokeStyle='#000'; c.lineWidth=t; c.lineCap='round';
+                 for (let x=i+r; x<=i+w-r; x+=r*2){
+                   c.beginPath(); c.arc(x, i+r, r, Math.PI, 0); c.stroke();
+                   c.beginPath(); c.arc(x, i+h-r, r, 0, Math.PI); c.stroke();
+                 }
+                 for (let y=i+r*3; y<=i+h-r*3; y+=r*2){
+                   c.beginPath(); c.arc(i+r, y, r, Math.PI/2, Math.PI*1.5); c.stroke();
+                   c.beginPath(); c.arc(i+w-r, y, r, Math.PI*1.5, Math.PI/2); c.stroke();
+                 }
+                 c.restore();
+               } },
+  zigzag:    { group:'Funky',  label:'Zigzag',
+               zone:t => t*3,
+               draw(c,W,H,t,i){
+                 const a=t*2.5, w=W-2*i, h=H-2*i, step=a*1.6;
+                 c.save(); c.strokeStyle='#000'; c.lineWidth=t; c.lineJoin='miter';
+                 const saw=(pts)=>{ c.beginPath(); pts.forEach((p,k)=>k?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1])); c.stroke(); };
+                 const top=[],bot=[],lef=[],rig=[];
+                 for (let x=i,k=0; x<=i+w; x+=step,k++){ top.push([x, i+(k%2?a:0)]); bot.push([x, i+h-(k%2?a:0)]); }
+                 for (let y=i,k=0; y<=i+h; y+=step,k++){ lef.push([i+(k%2?a:0), y]); rig.push([i+w-(k%2?a:0), y]); }
+                 [top,bot,lef,rig].forEach(saw);
+                 c.restore();
+               } },
+  wave:      { group:'Funky',  label:'Wave',
+               zone:t => t*3,
+               draw(c,W,H,t,i){
+                 const a=t*2.2, w=W-2*i, h=H-2*i, per=a*5;
+                 c.save(); c.strokeStyle='#000'; c.lineWidth=t;
+                 const wave=(fn,len)=>{ c.beginPath();
+                   for (let d=0;d<=len;d++){ const [x,y]=fn(d, Math.sin(d/per*Math.PI*2)*a);
+                     d?c.lineTo(x,y):c.moveTo(x,y); } c.stroke(); };
+                 wave((d,o)=>[i+d, i+a+o], w);
+                 wave((d,o)=>[i+d, i+h-a+o], w);
+                 wave((d,o)=>[i+a+o, i+d], h);
+                 wave((d,o)=>[i+w-a+o, i+d], h);
+                 c.restore();
+               } },
+  stars:     { group:'Funky',  label:'Stars',
+               zone:t => t*3,
+               draw(c,W,H,t,i){
+                 const r=t*2.2, w=W-2*i, h=H-2*i, step=r*3;
+                 for (let x=i+r; x<=i+w-r; x+=step){ starAt(c,x,i+r,r); starAt(c,x,i+h-r,r); }
+                 for (let y=i+r+step; y<=i+h-r-step; y+=step){ starAt(c,i+r,y,r); starAt(c,i+w-r,y,r); }
+               } },
+};
+
+// lay the card's lines out, measuring before anything is drawn
+function cardLines(el, innerW){
+  const probe = blankCtx(4,4);
+  const base = Math.max(10, el.size|0);
+  const fam  = fontStack(el.family);
+  const labelSize = clamp(Math.round(base*0.40), 9, 40);
+  const msgSize   = Math.max(10, Math.round(base*0.72));
+  const out = [];
+  const push = (text, size, weight, tracking, lh) =>
+    out.push({ text, size, font:`${weight} ${size}px ${fam}`, tracking:tracking||0,
+               h:Math.round(size*(lh||1.25)) });
+
+  // emoji ornaments lose their detail below roughly 40 dots on a 203 dpi head
+  if (el.ornament) push(el.ornament, Math.max(38, Math.round(base*1.35)), '400', 0, 1.25);
+  if (el.to){
+    if (el.labels) push('TO', labelSize, '400', Math.max(1,Math.round(labelSize*0.22)), 1.6);
+    push(el.to, base, '700', 0, 1.2);
+  }
+  if (el.message){
+    probe.font = `400 ${msgSize}px ${fam}`;
+    for (const ln of wrap(probe, el.message, innerW)) push(ln, msgSize, '400', 0, 1.35);
+  }
+  if (el.divider && (el.from || el.to)) out.push({ rule:true, h:Math.max(10, base>>1) });
+  if (el.from){
+    if (el.labels) push('FROM', labelSize, '400', Math.max(1,Math.round(labelSize*0.22)), 1.6);
+    push(el.from, base, '700', 0, 1.2);
+  }
+  return { lines: out, H: out.reduce((a,l) => a + l.h, 0) };
+}
+
+function renderCard(el, W){
+  const t     = clamp(el.weight|0, 1, 12);
+  const inset = clamp(el.inset|0, 0, 60);
+  const pad   = clamp(el.padding|0, 0, 80);
+  const B     = BORDERS[el.border] || BORDERS.single;
+  const zone  = B.zone(t);
+  const innerW = Math.max(40, W - 2*(inset + zone + pad));
+  const { lines, H } = cardLines(el, innerW);
+  const cardH = Math.max(zone*2 + pad*2 + 8, H + 2*(zone + pad));
+
+  const ctx = blankCtx(W, cardH);
+  ctx.fillStyle = '#000';
+  B.draw(ctx, W, cardH, t, inset);
+
+  ctx.fillStyle = '#000';
+  ctx.textBaseline = 'middle';
+  let y = zone + pad + (cardH - 2*(zone+pad) - H)/2;
+  for (const ln of lines){
+    if (ln.rule){
+      const rw = Math.round(innerW*0.42);
+      ctx.fillRect(Math.round((W-rw)/2), Math.round(y + ln.h/2 - 1), rw, Math.max(1, t>>1 || 1));
+    } else {
+      ctx.font = ln.font;
+      ctx.letterSpacing = ln.tracking + 'px';
+      const tw = ctx.measureText(ln.text).width;
+      ctx.fillText(ln.text, (W - tw)/2, y + ln.h/2);
+      ctx.letterSpacing = '0px';
+    }
+    y += ln.h;
+  }
+  return { canvas:ctx, h:cardH };
+}
+
+/* --------------------------------------------------------- full composition */
+let LAST = { mono:new Uint8Array(0), w:384, h:0 };
+
+function compose(){
+  const W = S.width;
+  const parts = S.els.map(el => renderEl(el, W));
+  const H = Math.max(1, parts.reduce((a,p) => a + p.h, 0));
+  const mono = new Uint8Array(W*H);
+  let y = 0;
+  for (const p of parts){ mono.set(p.mono, y*W); y += p.h; }
+  LAST = { mono, w:W, h:H };
+  return LAST;
+}
+
+function paint(){
+  const {mono, w, h} = compose();
+  const cv = $('#cv');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(w, h);
+  for (let i=0, p=0; i<mono.length; i++, p+=4){
+    const v = mono[i] ? 0 : 255;
+    img.data[p] = img.data[p+1] = img.data[p+2] = v;
+    img.data[p+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  cv.style.width  = Math.round(w * S.zoom) + 'px';
+  cv.style.height = Math.round(h * S.zoom) + 'px';
+  $('#paper').style.width = Math.round(w * S.zoom) + 'px';
+  $('#pillDims').textContent = `${w} × ${h} dots`;
+  $('#pillBytes').textContent = `${(Math.ceil(w/8)*h/1024).toFixed(1)} KiB raster`;
+}
+
+/* --------------------------------------------- 1-bit rows -> ESC/POS raster */
+function packRows(mono, w, h){
+  const bpr = Math.ceil(w/8);
+  const out = new Uint8Array(bpr*h);
+  for (let y=0;y<h;y++){
+    const ro = y*bpr, mo = y*w;
+    for (let x=0;x<w;x++) if (mono[mo+x]) out[ro + (x>>3)] |= 0x80 >> (x&7);
+  }
+  return { data:out, bpr };
+}
+
+/* ==========================================================================
+   Bluetooth transport
+   ========================================================================== */
+const U16 = x => `0000${x}-0000-1000-8000-00805f9b34fb`;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+// Chrome rejects the entire requestDevice() call if any single UUID is malformed,
+// so everything is validated here rather than trusted.
+function validUuids(list, label){
+  const ok = [], bad = [];
+  for (const u of list) (UUID_RE.test(u) ? ok : bad).push(u);
+  if (bad.length) console.warn('dropped malformed ' + label + ' UUIDs:', bad);
+  return Array.from(new Set(ok));
+}
+
+const KNOWN_SERVICES = validUuids([
+  U16('ff00'), U16('18f0'), U16('ae30'), U16('fff0'), U16('ffe0'), U16('fee7'),
+  U16('180f'), U16('180a'), U16('1800'), U16('1801'),
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+  '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+], 'service');
+
+// preferred write characteristics, best first
+const PREFERRED_WRITE = validUuids([
+  U16('ff02'), U16('2af1'), U16('ae01'), U16('fff2'), U16('fff1'), U16('ffe1'),
+  'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f',
+  '49535343-8841-43f4-a8d4-ecbe34729bb3',
+  '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
+], 'write');
+
+const PREFERRED_NOTIFY = validUuids([
+  U16('ff01'), U16('2af0'), U16('ae02'), U16('fff1'),
+  '49535343-1e4d-4bd9-ba61-23c647249616',
+  '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
+], 'notify');
+
+const BT = { device:null, server:null, chars:[], write:null, notify:null };
+
+// 0000ff02-0000-1000-8000-00805f9b34fb -> "ff02";  custom UUIDs -> first block
+const shortUuid = u => {
+  const m = /^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/.exec(u);
+  return m ? m[1] : u.slice(0,8);
+};
+// services that actually carry print data, vs. housekeeping services that never do
+const PRINTER_SERVICES = new Set([
+  U16('ff00'), U16('18f0'), U16('ae30'), U16('fff0'), U16('ffe0'), U16('fee7'),
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+  '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+]);
+const GENERIC_SERVICES = new Set([U16('1800'), U16('1801'), U16('180a'), U16('180f')]);
+
+function scoreWritable(x){
+  const i = PREFERRED_WRITE.indexOf(x.c.uuid);
+  let n = i >= 0 ? 100 - i : 0;
+  if (PRINTER_SERVICES.has(x.svc)) n += 50;
+  if (GENERIC_SERVICES.has(x.svc)) n -= 200;      // never auto-pick battery/device-info
+  if (x.c.properties.writeWithoutResponse) n += 5;
+  return n;
+}
+
+function log(msg, cls){
+  const el = $('#log');
+  const t = new Date().toLocaleTimeString('en-GB');
+  el.insertAdjacentHTML('beforeend',
+    `<span class="${cls||''}">[${t}] ${String(msg).replace(/[<&]/g, c => c==='<'?'&lt;':'&amp;')}</span>\n`);
+  el.scrollTop = el.scrollHeight;
+}
+const hex = s => new Uint8Array(s.match(/../g).map(b => parseInt(b,16)));
+
+function setConnected(on){
+  $('#dot').classList.toggle('on', on);
+  $('#btnDisconnect').disabled = !on;
+  $('#btnConnect').disabled = on;
+  ['#btnPrint','#btnTest','#btnFeed','#btnReset','#btnProbe'].forEach(s => $(s).disabled = !on);
+  if (!on){ $('#devName').textContent = 'Not connected'; }
+}
+
+async function connect(){
+  if (!navigator.bluetooth){ log('Web Bluetooth unavailable in this browser.', 'e'); return; }
+  const all = $('#filterMode').value === 'all';
+  const opts = all
+    ? { acceptAllDevices:true, optionalServices:KNOWN_SERVICES }
+    : { filters:[{namePrefix:'PeriPage'},{namePrefix:'Peripage'},{namePrefix:'PPG'},
+                 {namePrefix:'PERIPAGE'},{namePrefix:'A6'},{namePrefix:'PP'}],
+        optionalServices:KNOWN_SERVICES };
+  try{
+    log('Requesting device…');
+    const dev = await navigator.bluetooth.requestDevice(opts);
+    BT.device = dev;
+    dev.addEventListener('gattserverdisconnected', () => {
+      log('Disconnected.', 'w'); setConnected(false); BT.write = null;
+    });
+    log(`Selected "${dev.name || dev.id}" — connecting GATT…`);
+    BT.server = await dev.gatt.connect();
+
+    const svcs = await BT.server.getPrimaryServices();
+    BT.chars = [];
+    for (const s of svcs){
+      let cs = [];
+      try { cs = await s.getCharacteristics(); } catch(e){ continue; }
+      for (const c of cs){
+        const p = c.properties;
+        BT.chars.push({ c, svc:s.uuid,
+          w: p.write || p.writeWithoutResponse, n: p.notify || p.indicate });
+        log(`  ${shortUuid(s.uuid)} / ${shortUuid(c.uuid)}  ` +
+            [p.read&&'r', p.write&&'w', p.writeWithoutResponse&&'W', p.notify&&'n']
+              .filter(Boolean).join('') , 'd');
+      }
+    }
+    const writable = BT.chars.filter(x => x.w);
+    if (!writable.length){
+      log('No writable characteristic found. This printer is probably Bluetooth Classic (SPP) only — see note below.', 'e');
+      $('#devName').textContent = dev.name || 'Connected';
+      setConnected(true); $('#btnPrint').disabled = true; $('#btnTest').disabled = true;
+      return;
+    }
+    const sel = $('#charSel');
+    sel.innerHTML = writable.map((x,i) =>
+      `<option value="${i}">#${i} ${shortUuid(x.svc)} → ${shortUuid(x.c.uuid)}</option>`).join('');
+    let pick = 0, best = -Infinity;
+    writable.forEach((x,i) => { const n = scoreWritable(x); if (n > best){ best = n; pick = i; } });
+    sel.value = String(pick);
+    BT.write = writable[pick].c;
+    BT._writable = writable;
+    log(`Write characteristic #${pick}: ${shortUuid(writable[pick].svc)}/${shortUuid(BT.write.uuid)}`, 'o');
+    if (best <= 0)
+      log('None of these look like a known printer endpoint. Use "Probe every characteristic" to find the right one.', 'w');
+    await sleep(250);                       // let the link settle before the first write
+
+    const nt = BT.chars.find(x => x.n && PREFERRED_NOTIFY.includes(x.c.uuid))
+            || BT.chars.find(x => x.n);
+    if (nt){
+      try{
+        await nt.c.startNotifications();
+        nt.c.addEventListener('characteristicvaluechanged', ev => {
+          const v = new Uint8Array(ev.target.value.buffer);
+          log('← ' + Array.from(v).map(b=>b.toString(16).padStart(2,'0')).join(' '), 'd');
+        });
+        BT.notify = nt.c;
+      }catch(e){}
+    }
+    $('#devName').textContent = dev.name || 'Connected';
+    setConnected(true);
+    log('Ready to print.', 'o');
+  }catch(e){
+    if (e.name === 'NotFoundError' && /cancell?ed/i.test(e.message))
+      log('Device chooser dismissed.', 'w');
+    else
+      log('Connect failed: ' + e.message, 'e');
+  }
+}
+
+async function writeBytes(bytes, onProgress){
+  if (!BT.write) throw new Error('not connected');
+  const size  = parseInt($('#mtu').value, 10);
+  const delay = parseInt($('#delay').value, 10) || 0;
+  const noRsp = BT.write.properties.writeWithoutResponse;
+  for (let i=0; i<bytes.length; i+=size){
+    const slice = bytes.subarray(i, Math.min(i+size, bytes.length));
+    let tries = 0;
+    for(;;){
+      try{
+        if (noRsp && BT.write.writeValueWithoutResponse) await BT.write.writeValueWithoutResponse(slice);
+        else if (BT.write.writeValueWithResponse)        await BT.write.writeValueWithResponse(slice);
+        else                                             await BT.write.writeValue(slice);
+        break;
+      }catch(err){
+        if (++tries > 3) throw err;
+        log('retry write @' + i + ' (' + err.message + ')', 'w');
+        await sleep(120);
+      }
+    }
+    if (delay) await sleep(delay);
+    if (onProgress) onProgress(Math.min(i+size, bytes.length), bytes.length);
+  }
+}
+
+const CMD = {
+  reset:   () => hex('10fffe01000000000000000000000000'),
+  density: d => hex('10ff1000' + String(clamp(d,0,2)).padStart(2,'0')),
+  feed:    n => new Uint8Array([0x1b, 0x4a, clamp(n|0, 0, 255)]),
+};
+
+async function printMono(mono, w, h, opts){
+  opts = opts || {};
+  const { data, bpr } = packRows(mono, w, h);
+  const rowsPer = clamp(parseInt($('#chunkRows').value,10) || 48, 1, 255);
+  const byRow   = $('#txMode').value === 'rows';
+  const bar = $('#progbar');
+  if (opts.progress !== false) bar.style.width = '0%';
+
+  await writeBytes(CMD.density(S.density));
+  await sleep(30);
+
+  for (let y=0; y<h; y+=rowsPer){
+    const rows = Math.min(rowsPer, h-y);
+    // the reference driver resets immediately before every raster block
+    await writeBytes(CMD.reset());
+    await sleep(20);
+    await writeBytes(new Uint8Array(
+      [0x1d,0x76,0x30,0x00, bpr & 0xff, (bpr>>8)&0xff, rows & 0xff, (rows>>8)&0xff]));
+    if (byRow){
+      // one write per row, exactly as the reference does — never straddle a row boundary
+      for (let r=0; r<rows; r++)
+        await writeBytes(data.subarray((y+r)*bpr, (y+r+1)*bpr));
+    } else {
+      await writeBytes(data.subarray(y*bpr, (y+rows)*bpr));
+    }
+    if (opts.progress !== false) bar.style.width = Math.round((y+rows)/h*100) + '%';
+  }
+
+  if (opts.feed !== false){
+    const f = clamp(parseInt($('#feed').value,10)||0, 0, 255);
+    if (f) await writeBytes(CMD.feed(f));
+  }
+  if (opts.progress !== false){
+    bar.style.width = '100%';
+    setTimeout(() => bar.style.width = '0%', 900);
+  }
+}
+
+// print one short line of text, used by the characteristic probe
+async function sendLabel(text){
+  const W = S.width, H = 44;
+  const ctx = blankCtx(W, H);
+  ctx.fillStyle = '#000';
+  ctx.font = '700 26px ui-monospace, monospace';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 4, H/2);
+  await printMono(toMono(lumFrom(ctx,W,H), W, H, 'threshold', 160), W, H,
+                  {feed:false, progress:false});
+}
+
+// Writing to the wrong characteristic usually succeeds silently, so the only
+// reliable test is to print a numbered line through each one in turn.
+async function probeChars(){
+  const list = BT._writable || [];
+  if (!list.length){ log('No writable characteristics to probe.', 'w'); return; }
+  const saved = BT.write;
+  $('#btnProbe').disabled = true;
+  log(`Probing ${list.length} characteristics. Watch the paper.`);
+  for (let i=0; i<list.length; i++){
+    const tag = `#${i} ${shortUuid(list[i].svc)}/${shortUuid(list[i].c.uuid)}`;
+    BT.write = list[i].c;
+    log('  \u2192 ' + tag);
+    try { await sendLabel(tag); await sleep(400); }
+    catch(e){ log('    write rejected: ' + e.message, 'w'); }
+  }
+  BT.write = saved;
+  try { await writeBytes(CMD.feed(70)); } catch(e){}
+  log('Probe done. Whichever line appeared on paper names the characteristic \u2014 select it above.', 'o');
+  $('#btnProbe').disabled = false;
+}
+
+async function doPrint(){
+  const {mono, w, h} = compose();
+  if (!h || !S.els.length){ log('Nothing to print.', 'w'); return; }
+  $('#btnPrint').disabled = true;
+  log(`Printing ${w}×${h} (${(Math.ceil(w/8)*h/1024).toFixed(1)} KiB)…`);
+  try{
+    await printMono(mono, w, h);
+    log('Print finished.', 'o');
+  }catch(e){ log('Print failed: ' + e.message, 'e'); }
+  $('#btnPrint').disabled = false;
+}
+
+async function doTest(){
+  const W = S.width, H = 130;
+  const ctx = blankCtx(W, H);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,W,4);
+  ctx.font = '700 30px sans-serif'; ctx.textBaseline = 'top';
+  ctx.fillText('TEST STRIP', 6, 12);
+  ctx.font = '18px sans-serif';
+  ctx.fillText(W + ' dots wide', 6, 50);
+  for (let x=0;x<W;x++){                      // horizontal ramp, dithered below
+    const v = Math.round(255 * x/(W-1));
+    ctx.fillStyle = `rgb(${v},${v},${v})`;
+    ctx.fillRect(x, 76, 1, 26);
+  }
+  ctx.fillStyle = '#000';
+  for (let x=0;x<W;x+=2) ctx.fillRect(x, 108, 1, 8);   // 1px vertical bars
+  ctx.fillRect(0, H-4, W, 4);
+  const lum  = lumFrom(ctx, W, H);
+  const mono = toMono(lum, W, H, 'floyd', 128);
+  $('#btnTest').disabled = true;
+  try{ await printMono(mono, W, H); log('Test strip sent.', 'o'); }
+  catch(e){ log('Test failed: ' + e.message, 'e'); }
+  $('#btnTest').disabled = false;
+}
+
+/* ==========================================================================
+   Emoji picker — inserts into a text block. Rendered through Noto Emoji so the
+   glyphs are already black and white; colour emoji would threshold into blobs.
+   ========================================================================== */
+const EMOJI = {
+  'Smileys': '😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😗 😋 😛 🤪 🤨 🧐 🤓 😎 🥳 😏 😒 😞 😔 😟 😕 🙁 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 🤑 🤠 😈 👿 👹 👺 🤡 💩 👻 💀 ☠️ 👽 👾 🤖 🎃',
+  'Gestures': '👋 🤚 🖐️ ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 🖕 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪 🦾 🦵 🦶 👂 👃 🧠 🫀 👀 👁️ 👅 👄',
+  'People': '👶 🧒 👦 👧 🧑 👨 👩 🧓 👴 👵 🙍 🙎 🙅 🙆 💁 🙋 🧏 🙇 🤦 🤷 👮 🕵️ 💂 🥷 👷 🤴 👸 👳 👲 🧕 🤵 👰 🤰 🤱 👼 🎅 🤶 🦸 🦹 🧙 🧚 🧛 🧜 🧝 🧞 🧟 💆 💇 🚶 🧍 🧎 🏃 💃 🕺 🕴️ 👯 🧖 🧗',
+  'Animals': '🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🙈 🙉 🙊 🐒 🐔 🐧 🐦 🐤 🦆 🦅 🦉 🦇 🐺 🐗 🐴 🦄 🐝 🐛 🦋 🐌 🐞 🐜 🦂 🕷️ 🐢 🐍 🦎 🐙 🦑 🦐 🦀 🐡 🐠 🐟 🐬 🐳 🐋 🦈 🐊 🐅 🐆 🦓 🦍 🐘 🦛 🐪 🦒 🐃 🐄 🐎 🐖 🐏 🐑 🦙 🐐 🦌 🐕 🐩 🐈 🐓 🦃 🦚 🦜 🕊️ 🐇 🦝 🦔',
+  'Food': '🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍈 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🍆 🥑 🥦 🥬 🥒 🌶️ 🌽 🥕 🧄 🧅 🥔 🍠 🥐 🥯 🍞 🥖 🧀 🥚 🍳 🧈 🥞 🧇 🥓 🍔 🍟 🍕 🌭 🥪 🌮 🌯 🥗 🍝 🍜 🍲 🍛 🍣 🍱 🥟 🍤 🍙 🍚 🍥 🥠 🍦 🍰 🎂 🧁 🥧 🍫 🍬 🍭 🍮 🍯 🍼 🥛 ☕ 🍵 🍺 🍻 🥂 🍷 🥃 🍸 🍹 🧉 🧊',
+  'Travel': '🚗 🚕 🚙 🚌 🚎 🏎️ 🚓 🚑 🚒 🚐 🚚 🚛 🚜 🛴 🚲 🛵 🏍️ 🚨 🚔 🚍 🚘 🚖 🚡 🚠 🚟 🚃 🚋 🚞 🚝 🚄 🚅 🚈 🚂 🚆 🚇 🚊 🚉 ✈️ 🛫 🛬 🛩️ 💺 🛰️ 🚀 🛸 🚁 🛶 ⛵ 🚤 🛥️ 🛳️ ⛴️ 🚢 ⚓ 🗺️ 🗿 🗽 🗼 🏰 🏯 🏟️ 🎡 🎢 🎠 ⛲ ⛱️ 🏖️ 🏝️ 🏔️ ⛰️ 🌋 🗻 🏕️ ⛺ 🏠 🏡 🏢 🏥 🏦 🏨 🏪 🏫 ⛪ 🕌',
+  'Objects': '⌚ 📱 💻 ⌨️ 🖥️ 🖨️ 🖱️ 💽 💾 💿 📀 📷 📸 📹 🎥 📞 ☎️ 📟 📠 📺 📻 🎙️ ⏱️ ⏰ ⏳ 🔋 🔌 💡 🔦 🕯️ 🧯 🛢️ 💸 💵 💴 💶 💷 🪙 💰 💳 💎 ⚖️ 🧰 🔧 🔨 ⚒️ 🛠️ ⛏️ 🔩 ⚙️ 🧱 ⛓️ 🧲 🔫 💣 🧨 🔪 🗡️ ⚔️ 🛡️ 🚬 ⚰️ 🏺 🔮 📿 💈 ⚗️ 🔭 🔬 🕳️ 💊 💉 🩹 🩺 🚪 🛏️ 🛋️ 🚽 🚿 🛁 🧴 🧷 🧹 🧺 🧻 🧼 🧽 🛒 🚭',
+  'Symbols': '❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟 ☮️ ✝️ ☪️ 🕉️ ☸️ ✡️ 🔯 🕎 ☯️ ☦️ 🛐 ⛎ ♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏ ♐ ♑ ♒ ♓ 🆔 ⚛️ 🉑 ☢️ ☣️ 📴 📳 🈶 🈚 🈸 🅰️ 🅱️ 🆎 🆑 🅾️ 🆘 ❌ ⭕ 🛑 ⛔ 📛 🚫 💯 💢 ♨️ 🚷 🚯 🚳 🚱 🔞 📵 ❗ ❓ ‼️ ⁉️ 🔅 🔆 〽️ ⚠️ 🚸 🔱 ⚜️ 🔰 ♻️ ✅ 🈯 💹 ❇️ ✳️ ❎ 🌐 💠 Ⓜ️ 🌀 💤 🏧 🚾 ♿ 🅿️ 🛗 🈳 🈂️ 🛂 🛃 🛄 🛅',
+  'Fun': '⭐ 🌟 ✨ ⚡ 🔥 💥 💫 🌈 ☀️ 🌤️ ⛅ 🌥️ ☁️ 🌦️ 🌧️ ⛈️ 🌩️ 🌨️ ❄️ ☃️ ⛄ 🌬️ 💨 🌪️ 🌫️ 🌊 💧 💦 ☔ ☂️ 🌙 🌛 🌜 🌚 🌝 🌞 🪐 🌍 🌎 🌏 🎉 🎊 🎈 🎁 🎀 🎗️ 🎫 🎟️ 🏆 🏅 🥇 🥈 🥉 ⚽ 🏀 🏈 ⚾ 🎾 🏐 🏉 🎱 🏓 🏸 🥅 🏒 🏑 🥍 🏏 ⛳ 🎯 🎮 🕹️ 🎲 🧩 🎰 🎨 🎭 🎤 🎧 🎼 🎵 🎶 🥁 🎷 🎺 🎸 🪕 🎻 📚 📖 📝 ✏️ 📌 📎 ✂️ 📅 🔍 🔎 🔒 🔑',
+};
+const EMOJI_KEYWORDS = {
+  '😀':'grin happy smile','❤️':'heart love red','🔥':'fire hot lit','⭐':'star','✅':'check tick done ok',
+  '❌':'cross x no','🎉':'party celebrate tada','🙏':'pray thanks please','👍':'thumbs up good yes',
+  '👎':'thumbs down bad no','☕':'coffee tea','🍕':'pizza food','🐶':'dog puppy','🐱':'cat kitten',
+  '🚗':'car auto','✈️':'plane flight travel','🎂':'cake birthday','💡':'idea bulb light',
+  '📌':'pin note','⚠️':'warning caution','🕐':'time clock','💰':'money cash','🎁':'gift present',
+};
+
+let emojiTarget = null, emojiCat = Object.keys(EMOJI)[0];
+
+function openEmoji(ta, el, key){
+  emojiTarget = { ta, el, key: key || 'text' };
+  $('#emojiSearch').value = '';
+  emojiCat = Object.keys(EMOJI)[0];
+  renderEmoji();
+  $('#emojiModal').hidden = false;
+  $('#emojiSearch').focus();
+}
+function closeEmoji(){ $('#emojiModal').hidden = true; emojiTarget = null; }
+
+function renderEmoji(){
+  const q = $('#emojiSearch').value.trim().toLowerCase();
+  $('#emojiCats').innerHTML = Object.keys(EMOJI).map(c =>
+    `<button data-cat="${c}" class="${!q && c===emojiCat?'on':''}">${c}</button>`).join('');
+  let chars;
+  if (q){
+    chars = Object.values(EMOJI).join(' ').split(/\s+/).filter(Boolean)
+      .filter(ch => (EMOJI_KEYWORDS[ch]||'').includes(q));
+    if (!chars.length)
+      chars = Object.entries(EMOJI).filter(([c]) => c.toLowerCase().includes(q))
+                .flatMap(([,v]) => v.split(/\s+/)).filter(Boolean);
+  } else {
+    chars = EMOJI[emojiCat].split(/\s+/).filter(Boolean);
+  }
+  $('#emojiGrid').innerHTML = chars.length
+    ? chars.map(ch => `<button data-emoji="${ch}" title="${ch}">${ch}</button>`).join('')
+    : `<div class="enone">Nothing matches “${esc(q)}”.</div>`;
+}
+
+function insertEmoji(ch){
+  if (!emojiTarget) return;
+  const { ta, el, key } = emojiTarget;
+  const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a;
+  ta.value = ta.value.slice(0,a) + ch + ta.value.slice(b);
+  el[key] = ta.value;
+  const item = ta.closest('.item');
+  if (item) item.querySelector('.ttl').textContent = title(el);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = a + ch.length;
+  repaintWhenFontsReady();
+}
+
+/* ==========================================================================
+   UI
+   ========================================================================== */
+const esc = s => String(s??'').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const F = (label, html) => `<div class="f"><label>${label}</label>${html}</div>`;
+const num = (el,k,label,min,max,step) =>
+  F(label, `<input type="number" data-id="${el.id}" data-k="${k}" data-t="n" value="${el[k]}" min="${min}" max="${max}" step="${step||1}">`);
+const rng = (el,k,label,min,max,step) =>
+  F(`${label} <b style="color:var(--tx)">${el[k]}</b>`,
+    `<input type="range" data-id="${el.id}" data-k="${k}" data-t="n" value="${el[k]}" min="${min}" max="${max}" step="${step||1}">`);
+const sel = (el,k,label,opts) =>
+  F(label, `<select data-id="${el.id}" data-k="${k}">` +
+    opts.map(([v,t]) => `<option value="${v}"${String(el[k])===String(v)?' selected':''}>${t}</option>`).join('') +
+    `</select>`);
+const chk = (el,k,label) =>
+  `<label style="display:flex;gap:6px;align-items:center;color:var(--tx);margin:0 0 8px">
+     <input type="checkbox" data-id="${el.id}" data-k="${k}" data-t="b"${el[k]?' checked':''}> ${label}</label>`;
+const ALIGN = [['left','Left'],['center','Centre'],['right','Right']];
+
+function borderSelect(el){
+  const groups = {};
+  for (const [k,b] of Object.entries(BORDERS)) (groups[b.group] ||= []).push([k, b.label]);
+  const html = Object.entries(groups).map(([g,list]) =>
+    `<optgroup label="${g}">` + list.map(([v,t]) =>
+      `<option value="${v}"${el.border===v?' selected':''}>${t}</option>`).join('') +
+    `</optgroup>`).join('');
+  return `<div class="f"><label>Border</label>` +
+         `<select data-id="${el.id}" data-k="border">${html}</select></div>`;
+}
+
+function fontSelect(el){
+  const groups = FONTS.map(([g, list]) =>
+    `<optgroup label="${g}">` + list.map(([v,t]) =>
+      `<option value="${esc(v)}"${el.family===v?' selected':''}>${t}</option>`).join('') +
+    `</optgroup>`).join('');
+  const known = FONTS.some(([,l]) => l.some(([v]) => v === el.family));
+  const extra = known ? '' :
+    `<option value="${esc(el.family)}" selected>${esc(el.family)} (saved)</option>`;
+  return `<div class="f"><label>Font</label>` +
+         `<select data-id="${el.id}" data-k="family" data-font="1">${extra}${groups}</select></div>`;
+}
+
+function title(el){
+  switch(el.type){
+    case 'text':    return (el.text||'').split('\n')[0].slice(0,40) || 'empty';
+    case 'image':   return el.name || (el.src ? 'image' : 'no file chosen');
+    case 'qr':      return el.value.slice(0,40);
+    case 'barcode': return el.format + ' · ' + el.value.slice(0,24);
+    case 'rule':    return el.style + ' ' + el.thickness + 'px';
+    case 'space':   return el.height + 'px gap';
+    case 'card':    return `${el.to||'—'} ← ${el.from||'—'} · ${BORDERS[el.border]?.label||el.border}`;
+  }
+}
+
+function bodyFor(el){
+  const sp = `<div class="grid2">${num(el,'before','Space above',0,300)}${num(el,'after','Space below',0,300)}</div>`;
+  switch(el.type){
+    case 'text': return `
+      <div class="f"><label>Text</label>
+        <div class="tbar">
+          <button data-emoji-btn="${el.id}" data-emoji-k="text">😀 Emoji</button>
+          <button data-case="${el.id}" data-mode="upper">AA</button>
+          <button data-case="${el.id}" data-mode="lower">aa</button>
+        </div>
+        <textarea data-id="${el.id}" data-k="text">${esc(el.text)}</textarea>
+      </div>
+      <div class="grid2">
+        ${fontSelect(el)}
+        ${num(el,'size','Size (px)',6,220)}
+      </div>
+      <div class="grid2">${sel(el,'align','Align',ALIGN)}${num(el,'tracking','Letter space',-5,30)}</div>
+      ${rng(el,'lineHeight','Line height',0.8,3,0.05)}
+      <div class="row" style="gap:14px;margin-bottom:8px">
+        ${chk(el,'bold','Bold')}${chk(el,'italic','Italic')}${chk(el,'invert','Invert')}
+      </div>${sp}`;
+
+    case 'image': return `
+      ${F('File', `<input type="file" accept="image/*" data-file="${el.id}" style="padding:4px">`)}
+      <div class="grid2">${rng(el,'scale','Width %',5,100)}${sel(el,'align','Align',ALIGN)}</div>
+      ${sel(el,'dither','Halftone',[['floyd','Floyd–Steinberg'],['atkinson','Atkinson'],
+                                    ['bayer','Ordered 8×8'],['threshold','Hard threshold']])}
+      ${el.dither==='threshold' ? rng(el,'threshold','Threshold',1,254) : ''}
+      ${rng(el,'brightness','Brightness',-120,120)}
+      ${rng(el,'contrast','Contrast',-100,100)}
+      ${chk(el,'invert','Invert')}${sp}`;
+
+    case 'qr': return `
+      ${F('Content', `<textarea data-id="${el.id}" data-k="value">${esc(el.value)}</textarea>`)}
+      <div class="grid2">${num(el,'size','Size (px)',48,S.width)}${sel(el,'align','Align',ALIGN)}</div>
+      ${sel(el,'ecc','Error correction',[['L','L · 7%'],['M','M · 15%'],['Q','Q · 25%'],['H','H · 30%']])}${sp}`;
+
+    case 'barcode': return `
+      ${F('Value', `<input type="text" data-id="${el.id}" data-k="value" value="${esc(el.value)}">`)}
+      ${sel(el,'format','Symbology',[['CODE128','Code 128'],['CODE39','Code 39'],['EAN13','EAN-13'],
+                                     ['EAN8','EAN-8'],['UPC','UPC-A'],['ITF14','ITF-14'],['MSI','MSI'],
+                                     ['pharmacode','Pharmacode']])}
+      <div class="grid2">${num(el,'height','Bar height',20,300)}${sel(el,'align','Align',ALIGN)}</div>
+      ${chk(el,'showValue','Print value below')}${sp}`;
+
+    case 'rule': return `
+      <div class="grid2">${sel(el,'style','Style',[['solid','Solid'],['dashed','Dashed'],['dotted','Dotted']])}
+      ${num(el,'thickness','Thickness',1,40)}</div>
+      ${num(el,'inset','Side inset',0,150)}${sp}`;
+
+    case 'space': return num(el,'height','Height (px)',1,400);
+
+    case 'card': return `
+      <div class="grid2">
+        ${F('To', `<input type="text" data-id="${el.id}" data-k="to" value="${esc(el.to)}">`)}
+        ${F('From', `<input type="text" data-id="${el.id}" data-k="from" value="${esc(el.from)}">`)}
+      </div>
+      <div class="f"><label>Message</label>
+        <div class="tbar"><button data-emoji-btn="${el.id}" data-emoji-k="message">😀 Emoji</button></div>
+        <textarea data-id="${el.id}" data-k="message" style="min-height:48px">${esc(el.message)}</textarea>
+      </div>
+      <div class="f"><label>Ornament</label>
+        <div class="tbar"><button data-emoji-btn="${el.id}" data-emoji-k="ornament">😀 Pick</button></div>
+        <input type="text" data-id="${el.id}" data-k="ornament" value="${esc(el.ornament)}">
+      </div>
+      ${fontSelect(el)}
+      ${borderSelect(el)}
+      <div class="grid2">${num(el,'size','Name size',10,90)}${num(el,'weight','Border weight',1,12)}</div>
+      <div class="grid2">${num(el,'padding','Padding',0,80)}${num(el,'inset','Side inset',0,60)}</div>
+      <div class="row" style="gap:14px;margin-bottom:8px">
+        ${chk(el,'labels','To / From labels')}${chk(el,'divider','Divider')}
+      </div>${sp}`;
+  }
+}
+
+function buildList(){
+  const wrapEl = $('#list');
+  if (!S.els.length){
+    wrapEl.innerHTML = `<div class="empty">Nothing yet.<br>Add a block above to start.</div>`;
+    paint(); return;
+  }
+  wrapEl.innerHTML = S.els.map((el,i) => `
+    <div class="item t-${el.type} ${el.collapsed?'collapsed':''} ${S.sel===el.id?'sel':''}" data-item="${el.id}">
+      <div class="top" data-toggle="${el.id}">
+        <span class="handle" data-handle="${el.id}" title="Drag to reorder">⠿</span>
+        <span class="chev">${el.collapsed ? '▶' : '▼'}</span>
+        <span class="kind">${el.type}</span>
+        <span class="ttl">${esc(title(el))}</span>
+        <button class="mini ghost" data-move="${el.id}" data-dir="-1" ${i===0?'disabled':''} title="Up">↑</button>
+        <button class="mini ghost" data-move="${el.id}" data-dir="1" ${i===S.els.length-1?'disabled':''} title="Down">↓</button>
+        <button class="mini ghost" data-dup="${el.id}" title="Duplicate">⧉</button>
+        <button class="mini ghost danger" data-del="${el.id}" title="Delete">✕</button>
+      </div>
+      <div class="body">${bodyFor(el)}</div>
+    </div>`).join('');
+  paint();
+}
+
+const byId = id => S.els.find(e => e.id === +id);
+
+/* ------------------------------------------------------------- interactions */
+$('#list').addEventListener('click', ev => {
+  if (ev.target.closest('[data-handle]')) return;   // the handle drags, it does not toggle
+  const t = ev.target.closest('[data-move],[data-dup],[data-del],[data-toggle]');
+  if (!t) return;
+  if (t.dataset.move){
+    ev.stopPropagation();
+    const i = S.els.findIndex(e => e.id === +t.dataset.move);
+    const j = i + (+t.dataset.dir);
+    if (j >= 0 && j < S.els.length){ [S.els[i], S.els[j]] = [S.els[j], S.els[i]]; buildList(); }
+  } else if (t.dataset.dup){
+    ev.stopPropagation();
+    const el = byId(t.dataset.dup);
+    const copy = {...el, id:uid++};
+    S.els.splice(S.els.indexOf(el)+1, 0, copy);
+    buildList();
+  } else if (t.dataset.del){
+    ev.stopPropagation();
+    S.els = S.els.filter(e => e.id !== +t.dataset.del);
+    buildList();
+  } else if (t.dataset.toggle){
+    const el = byId(t.dataset.toggle);
+    el.collapsed = !el.collapsed;
+    S.sel = el.id;
+    buildList();
+  }
+});
+
+$('#list').addEventListener('click', ev => {
+  const eb = ev.target.closest('[data-emoji-btn]');
+  if (eb){
+    ev.stopPropagation();
+    const id  = eb.dataset.emojiBtn, key = eb.dataset.emojiK || 'text';
+    const el  = byId(id);
+    const fld = eb.closest('.item').querySelector(`[data-id="${id}"][data-k="${key}"]`);
+    if (el && fld) openEmoji(fld, el, key);
+    return;
+  }
+  const cb = ev.target.closest('[data-case]');
+  if (cb){
+    ev.stopPropagation();
+    const el = byId(cb.dataset.case);
+    const ta = cb.closest('.f').querySelector('textarea');
+    if (!el || !ta) return;
+    ta.value = el.text = cb.dataset.mode === 'upper'
+      ? el.text.toUpperCase() : el.text.toLowerCase();
+    const item = ta.closest('.item');
+    if (item) item.querySelector('.ttl').textContent = title(el);
+    paint();
+  }
+});
+
+$('#list').addEventListener('input', ev => {
+  const i = ev.target;
+  if (!i.dataset.k) return;
+  const el = byId(i.dataset.id);
+  if (!el) return;
+  const t = i.dataset.t;
+  el[i.dataset.k] = t === 'n' ? parseFloat(i.value) : t === 'b' ? i.checked : i.value;
+  const item = i.closest('.item');
+  if (item) item.querySelector('.ttl').textContent = title(el);
+  const lab = i.closest('.f')?.querySelector('label b');
+  if (lab) lab.textContent = i.value;
+  // structural fields that change which controls are shown
+  if (i.dataset.k === 'dither'){ buildList(); return; }
+  if (i.dataset.font){ repaintWhenFontsReady(); return; }
+  if (i.dataset.k === 'border'){ paint(); return; }
+  paint();
+});
+
+$('#list').addEventListener('change', ev => {
+  const f = ev.target;
+  if (!f.dataset.file) return;
+  const el = byId(f.dataset.file), file = f.files[0];
+  if (!el || !file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    el.src = r.result; el.name = file.name;
+    const img = new Image();
+    img.onload = () => { el._img = img; buildList(); };
+    img.src = r.result;
+  };
+  r.readAsDataURL(file);
+});
+
+/* ------------------------------------------------------- drag to reorder ----
+   Pointer events rather than HTML5 drag-and-drop: HTML5 dragging does not fire
+   on touch screens, and this page is meant to be usable from a phone. */
+let drag = null;
+
+function afterElement(list, y){
+  return [...list.querySelectorAll('.item:not(.dragging)')].reduce((best, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height/2;
+    return (offset < 0 && offset > best.offset) ? { offset, el:child } : best;
+  }, { offset: -Infinity }).el || null;
+}
+
+function autoScroll(y){
+  const box = $('.col.left');
+  const r = box.getBoundingClientRect(), edge = 48;
+  if (y < r.top + edge)         box.scrollTop -= Math.ceil((r.top + edge - y)/4);
+  else if (y > r.bottom - edge) box.scrollTop += Math.ceil((y - r.bottom + edge)/4);
+}
+
+$('#list').addEventListener('pointerdown', ev => {
+  const h = ev.target.closest('[data-handle]');
+  if (!h) return;
+  const item = h.closest('.item');
+  if (!item) return;
+  ev.preventDefault();
+  try { h.setPointerCapture(ev.pointerId); } catch(e){}
+  drag = { item, id:+item.dataset.item };
+  item.classList.add('dragging');
+  $('#list').classList.add('dragging-active');
+});
+
+$('#list').addEventListener('pointermove', ev => {
+  if (!drag) return;
+  ev.preventDefault();
+  const list = $('#list');
+  const after = afterElement(list, ev.clientY);
+  if (after == null) list.appendChild(drag.item);
+  else if (after !== drag.item) list.insertBefore(drag.item, after);
+  autoScroll(ev.clientY);
+});
+
+function endDrag(){
+  if (!drag) return;
+  const order = $$('#list .item').map(n => +n.dataset.item);
+  S.els.sort((a,b) => order.indexOf(a.id) - order.indexOf(b.id));
+  drag.item.classList.remove('dragging');
+  $('#list').classList.remove('dragging-active');
+  drag = null;
+  buildList();
+}
+$('#list').addEventListener('pointerup', endDrag);
+$('#list').addEventListener('pointercancel', endDrag);
+
+$$('[data-add]').forEach(b => b.addEventListener('click', () => {
+  const el = makeEl(b.dataset.add);
+  el.collapsed = false;
+  S.els.push(el); S.sel = el.id;
+  buildList();
+  $('#list').lastElementChild?.scrollIntoView({block:'nearest'});
+}));
+
+$('#btnClear').onclick = () => { if (S.els.length && confirm('Remove all blocks?')){ S.els = []; buildList(); } };
+$('#btnCollapse').onclick = () => {
+  const any = S.els.some(e => !e.collapsed);
+  S.els.forEach(e => e.collapsed = any);
+  buildList();
+};
+
+$('#zoom').onchange = e => { S.zoom = parseFloat(e.target.value); paint(); drawGrid(); };
+$('#paperW').onchange = e => { S.width = parseInt(e.target.value,10); buildList(); };
+$$('#density button').forEach(b => b.onclick = () => {
+  S.density = +b.dataset.d;
+  $$('#density button').forEach(x => x.classList.toggle('on', x === b));
+});
+
+/* dot grid overlay */
+const gridOv = document.createElement('div');
+Object.assign(gridOv.style, {position:'absolute', inset:'0', pointerEvents:'none', display:'none'});
+$('#paper').appendChild(gridOv);
+function drawGrid(){
+  const z = S.zoom;
+  gridOv.style.display = S.grid && z >= 2 ? 'block' : 'none';
+  gridOv.style.backgroundImage =
+    `linear-gradient(to right, rgba(91,156,255,.35) 1px, transparent 1px),
+     linear-gradient(to bottom, rgba(91,156,255,.35) 1px, transparent 1px)`;
+  gridOv.style.backgroundSize = `${z}px ${z}px`;
+}
+$('#btnGrid').onclick = () => { S.grid = !S.grid; $('#btnGrid').classList.toggle('on'); drawGrid(); };
+
+/* save / load / export */
+const KEY = 'peripage-editor-v1';
+$('#btnSave').onclick = () => {
+  const data = { width:S.width, density:S.density,
+                 els:S.els.map(e => { const c = {...e}; delete c._img; return c; }) };
+  localStorage.setItem(KEY, JSON.stringify(data));
+  log('Layout saved to this browser.', 'o');
+};
+$('#btnLoad').onclick = () => {
+  const raw = localStorage.getItem(KEY);
+  if (!raw){ log('No saved layout.', 'w'); return; }
+  try{
+    const d = JSON.parse(raw);
+    S.width = d.width || 384; S.density = d.density ?? 1;
+    S.els = d.els || [];
+    uid = Math.max(1, ...S.els.map(e => e.id)) + 1;
+    $('#paperW').value = String(S.width);
+    $$('#density button').forEach(x => x.classList.toggle('on', +x.dataset.d === S.density));
+    S.els.forEach(e => e.collapsed = true);        // a loaded layout starts tidy
+    S.els.filter(e => e.type === 'image' && e.src).forEach(e => {
+      const img = new Image(); img.onload = () => { e._img = img; paint(); }; img.src = e.src;
+    });
+    buildList(); log('Layout loaded.', 'o');
+  }catch(e){ log('Load failed: ' + e.message, 'e'); }
+};
+$('#btnPng').onclick = () => {
+  $('#cv').toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'peripage-' + Date.now() + '.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  });
+};
+
+/* emoji picker wiring */
+$('#emojiCats').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-cat]');
+  if (!b) return;
+  emojiCat = b.dataset.cat;
+  $('#emojiSearch').value = '';
+  renderEmoji();
+});
+$('#emojiGrid').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-emoji]');
+  if (b) insertEmoji(b.dataset.emoji);
+});
+$('#emojiSearch').addEventListener('input', renderEmoji);
+$('#emojiClose').onclick = closeEmoji;
+$('#emojiModal').addEventListener('click', ev => {
+  if (ev.target === $('#emojiModal')) closeEmoji();
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && !$('#emojiModal').hidden) closeEmoji();
+});
+
+/* printer buttons */
+$('#btnConnect').onclick = connect;
+$('#btnDisconnect').onclick = () => { try{ BT.device?.gatt?.disconnect(); }catch(e){} setConnected(false); };
+$('#charSel').onchange = e => {
+  const w = BT._writable?.[+e.target.value];
+  if (w){ BT.write = w.c; log('Write characteristic → ' + w.c.uuid, 'o'); }
+};
+$('#btnPrint').onclick = doPrint;
+$('#btnProbe').onclick  = probeChars;
+$('#btnTest').onclick  = doTest;
+$('#btnFeed').onclick  = async () => {
+  try{ await writeBytes(CMD.feed(clamp(parseInt($('#feed').value,10)||60,1,255))); log('Fed paper.'); }
+  catch(e){ log('Feed failed: ' + e.message, 'e'); }
+};
+$('#btnReset').onclick = async () => {
+  try{ await writeBytes(CMD.reset()); log('Reset sent.'); }
+  catch(e){ log('Reset failed: ' + e.message, 'e'); }
+};
+
+/* ------------------------------------------------------------------- boot */
+function boot(){
+  const warn = [];
+  if (!navigator.bluetooth)
+    warn.push('<b>Web Bluetooth is not available here.</b> Use desktop Chrome, Edge or Chrome on Android, over <code>https://</code> or <code>http://localhost</code>.');
+  else if (!window.isSecureContext)
+    warn.push('<b>Insecure context.</b> Serve this page from <code>http://localhost</code> or HTTPS or the browser will block Bluetooth.');
+  warn.push('If the PeriPage only exposes Bluetooth Classic (SPP), no writable GATT characteristic will appear and the browser cannot reach it. Try “All Bluetooth devices” once — many PeriPage units also advertise a BLE endpoint.');
+  $('#secWarn').innerHTML = `<div class="warnbox">${warn.join('<hr style="border:0;border-top:1px solid rgba(255,176,32,.3);margin:7px 0">')}</div>`;
+
+  S.els = [
+    Object.assign(makeEl('text'), {text:'PERIPAGE A6', size:44, bold:true, align:'center', after:2}),
+    Object.assign(makeEl('rule'), {thickness:4}),
+    Object.assign(makeEl('text'), {text:'Web Bluetooth editor.\nType here, add photos, QR codes and barcodes, then hit Print.', size:22, align:'center'}),
+    Object.assign(makeEl('qr'),   {value:'https://developer.mozilla.org/docs/Web/API/Web_Bluetooth_API', size:220}),
+    Object.assign(makeEl('space'),{height:20}),
+  ];
+  uid = Math.max(...S.els.map(e=>e.id)) + 1;
+  buildList(); drawGrid(); setConnected(false);
+  ensureFonts().then(paint);
+  if (document.fonts) document.fonts.ready.then(paint);
+  log('Ready. Connect a printer to begin.', 'd');
+}
+boot();
+</script>
+</body>
+</html>
