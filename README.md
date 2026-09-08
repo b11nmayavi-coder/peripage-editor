@@ -20,6 +20,24 @@ the Worker only serves `public/`.
     npm run deploy
 
 `npx wrangler deploy --dry-run` validates the config without touching the account.
+
+### Continuous deployment
+
+Pushing to `main` deploys, via `.github/workflows/deploy.yml`. Every push and pull request
+first runs a verify job that extracts the inline script from `public/index.html` and parses
+it with `node --check`, then validates the Worker config with a dry run. The whole app is one
+HTML file with a large inline script, so a syntax error would otherwise deploy cleanly and
+only fail in the browser.
+
+Two repository secrets are required. Create a Cloudflare API token at
+**dash.cloudflare.com/profile/api-tokens** using the *Edit Cloudflare Workers* template, then:
+
+    gh secret set CLOUDFLARE_API_TOKEN     # paste the token when prompted
+    gh secret set CLOUDFLARE_ACCOUNT_ID    # paste your account id
+
+Both commands prompt for the value, so nothing sensitive lands in your shell history. Until
+they are set, the deploy job finishes green with a warning instead of failing, so the repo is
+never in a broken-looking state. Local `npm run deploy` keeps working regardless.
 The site is public once deployed. It holds no secrets and no printer data — layouts live
 only in the browser's `localStorage` — but put Cloudflare Access in front of it if you would
 rather it not be world-readable.

@@ -1,0 +1,88 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# never let two deploys race each other onto the same Worker
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The whole app is one HTML file with a large inline script, so a typo there
+      # would deploy happily and only break in the browser. Parse it first.
+      - name: Syntax-check the inline script
+        run: |
+          awk '/^<script>$/{f=1;next} /^<\/script>$/{f=0} f' public/index.html > /tmp/app.js
+          if [ ! -s /tmp/app.js ]; then
+            echo "::error::No inline <script> block found in public/index.html"
+            exit 1
+          fi
+          node --check /tmp/app.js
+          echo "Parsed $(wc -l < /tmp/app.js) lines of inline script."
+
+      - name: Check the page still has its essentials
+        run: |
+          fail=0
+          for needle in '<title>' 'navigator.bluetooth' 'packRows' 'GS v 0\|0x1d,0x76,0x30'; do
+            grep -q "$needle" public/index.html || { echo "::error::missing: $needle"; fail=1; }
+          done
+          exit $fail
+
+      # Needs no Cloudflare credentials; catches a broken wrangler config early.
+      - name: Validate the Worker config
+        run: npx --yes wrangler@4 deploy --dry-run
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://peripage-editor.balan1-618.workers.dev
+    steps:
+      # Secrets are unavailable to job-level `if`, so gate here instead. This keeps
+      # the first push green with a warning rather than a confusing red failure.
+      - name: Check for Cloudflare credentials
+        id: creds
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set — skipping deploy. See README > Continuous deployment."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.ready == 'true'
+
+      - name: Deploy
+        if: steps.creds.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+
+      - name: Summary
+        if: steps.creds.outputs.ready == 'true'
+        run: echo "Deployed to https://peripage-editor.balan1-618.workers.dev" >> "$GITHUB_STEP_SUMMARY"
