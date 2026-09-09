@@ -4,7 +4,7 @@ A single-file editor that composes a receipt in the browser and prints it straig
 PeriPage thermal printer over **Web Bluetooth**. No server, no app, no driver.
 
     ./start.sh          # http://localhost:8765
-    npm run deploy      # → https://peripage.baln.me
+    npm run deploy      # → https://peripage.baln.tools
 
 `file://` will not work — Chrome only exposes `navigator.bluetooth` on `https://` or
 `http://localhost`. That is also why the Cloudflare deploy matters: it is the only way to
@@ -23,8 +23,15 @@ the Worker only serves `public/`.
 
 ### Custom domains
 
-Live at **https://peripage.baln.me**, with the original
-`peripage-editor.<subdomain>.workers.dev` URL still working alongside it.
+Live at **https://peripage.baln.tools** and **https://peripage.baln.me**, with the original
+`peripage-editor.<subdomain>.workers.dev` URL still working alongside them.
+
+⚠️ **Turn on “Always Use HTTPS”** for each zone (Cloudflare dashboard → SSL/TLS → Edge
+Certificates). All three hostnames currently answer plain `http://` with a 200 instead of
+redirecting. That is normally cosmetic, but not here: Web Bluetooth is hidden entirely on an
+insecure origin, so anyone landing on the `http://` URL sees an editor whose Connect button
+cannot work, with no explanation. Browsers often upgrade the request themselves, which makes
+the failure intermittent and confusing rather than obvious.
 
 Domains are declared in `wrangler.jsonc` under `routes` with `custom_domain: true`.
 Cloudflare creates the DNS record and issues the certificate itself.

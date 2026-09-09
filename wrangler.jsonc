@@ -9,9 +9,8 @@
   // adding routes turns workers.dev off unless it is asked for explicitly
   "workers_dev": true,
   "routes": [
-    { "pattern": "peripage.baln.me", "custom_domain": true }
-    // Add once baln.tools is on Cloudflare (see README > Custom domains):
-    // ,{ "pattern": "peripage.baln.tools", "custom_domain": true }
+    { "pattern": "peripage.baln.me", "custom_domain": true },
+    { "pattern": "peripage.baln.tools", "custom_domain": true }
   ],
   "observability": { "enabled": true }
 }
