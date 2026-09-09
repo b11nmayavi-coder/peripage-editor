@@ -6,5 +6,12 @@
     "directory": "./public",
     "not_found_handling": "single-page-application"
   },
+  // adding routes turns workers.dev off unless it is asked for explicitly
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "peripage.baln.me", "custom_domain": true }
+    // Add once baln.tools is on Cloudflare (see README > Custom domains):
+    // ,{ "pattern": "peripage.baln.tools", "custom_domain": true }
+  ],
   "observability": { "enabled": true }
 }

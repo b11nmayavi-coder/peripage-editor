@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://peripage-editor.balan1-618.workers.dev
+      url: https://peripage.baln.me
     steps:
       # Secrets are unavailable to job-level `if`, so gate here instead. This keeps
       # the first push green with a warning rather than a confusing red failure.
@@ -85,4 +85,4 @@ jobs:
 
       - name: Summary
         if: steps.creds.outputs.ready == 'true'
-        run: echo "Deployed to https://peripage-editor.balan1-618.workers.dev" >> "$GITHUB_STEP_SUMMARY"
+        run: echo "Deployed to https://peripage.baln.me"  >> "$GITHUB_STEP_SUMMARY"

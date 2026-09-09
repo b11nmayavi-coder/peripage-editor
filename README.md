@@ -4,7 +4,7 @@ A single-file editor that composes a receipt in the browser and prints it straig
 PeriPage thermal printer over **Web Bluetooth**. No server, no app, no driver.
 
     ./start.sh          # http://localhost:8765
-    npm run deploy      # → https://peripage-editor.<subdomain>.workers.dev
+    npm run deploy      # → https://peripage.baln.me
 
 `file://` will not work — Chrome only exposes `navigator.bluetooth` on `https://` or
 `http://localhost`. That is also why the Cloudflare deploy matters: it is the only way to
@@ -20,6 +20,27 @@ the Worker only serves `public/`.
     npm run deploy
 
 `npx wrangler deploy --dry-run` validates the config without touching the account.
+
+### Custom domains
+
+Live at **https://peripage.baln.me**, with the original
+`peripage-editor.<subdomain>.workers.dev` URL still working alongside it.
+
+Domains are declared in `wrangler.jsonc` under `routes` with `custom_domain: true`.
+Cloudflare creates the DNS record and issues the certificate itself.
+
+One trap worth knowing: **adding any route silently disables workers.dev** unless you also
+set `"workers_dev": true`. The first deploy after adding a custom domain took the old URL
+offline with only a warning, so that flag is now explicit in the config.
+
+To add another domain, the zone must already be in the same Cloudflare account, otherwise
+the deploy fails with `Can't infer zone from route [code: 10082]`. For a domain registered
+elsewhere:
+
+1. Cloudflare dashboard → **Add a site** → enter the domain.
+2. Replace the registrar's nameservers with the Cloudflare pair it gives you.
+3. Wait for the zone to go active, usually minutes.
+4. Add the pattern to `routes` in `wrangler.jsonc` and deploy.
 
 ### Continuous deployment
 
